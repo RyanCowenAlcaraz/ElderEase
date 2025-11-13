@@ -1,0 +1,126 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  name         String
+  password     String
+  phone        String?
+  birthYear    String?
+  profilePhoto String?
+
+  // Preferences
+  fontSize      String  @default("medium")
+  contrast      String  @default("normal")
+  voiceEnabled  Boolean @default(false)
+  tutorialSpeed String  @default("normal")
+  reducedMotion Boolean @default(false)
+  simpleLayout  Boolean @default(false)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tutorials    TutorialProgress[]
+  chatSessions ChatSession[]
+  preferences  UserPreference?
+  bookmarks    TutorialBookmark[] // Add this line
+
+  @@map("users")
+}
+
+model Tutorial {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String
+  difficulty  String
+  steps       Json
+  estimatedTime Int
+  videoUrl    String?
+  platform    String?   // Make this optional with ?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  progress    TutorialProgress[]
+  bookmarks   TutorialBookmark[]
+  
+  @@map("tutorials")
+}
+
+model TutorialProgress {
+  id          String  @id @default(cuid())
+  userId      String
+  tutorialId  String
+  completed   Boolean @default(false)
+  currentStep Int     @default(0)
+  timeSpent   Int     @default(0) // in seconds
+
+  // Timestamps
+  startedAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tutorial Tutorial @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tutorialId])
+  @@map("tutorial_progress")
+}
+
+model ChatSession {
+  id       String @id @default(cuid())
+  userId   String
+  title    String @default("New Chat")
+  messages Json // Array of chat messages
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("chat_sessions")
+}
+
+model UserPreference {
+  id          String @id @default(cuid())
+  userId      String @unique
+  preferences Json // Store all accessibility preferences
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model TutorialBookmark {
+  id         String   @id @default(cuid())
+  userId     String
+  tutorialId String
+  createdAt  DateTime @default(now())
+
+  // Relations - fixed with proper relation fields
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tutorial Tutorial @relation(fields: [tutorialId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tutorialId])
+  @@map("tutorial_bookmarks")
+}
