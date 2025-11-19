@@ -1,4 +1,13 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
 export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+
   const features = [
     {
       title: "Simple Tutorials",
@@ -22,6 +31,32 @@ export default function Home() {
     }
   ]
 
+  useEffect(() => {
+    checkAuthStatus()
+  }, [])
+
+  const checkAuthStatus = () => {
+    try {
+      const isLoggedIn = localStorage.getItem('elderease_is_logged_in')
+      setIsLoggedIn(isLoggedIn === 'true')
+    } catch (error) {
+      console.error('Error checking auth status:', error)
+      setIsLoggedIn(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleStartLearning = () => {
+  if (isLoggedIn) {
+    // User is logged in, redirect to tutorials dashboard
+    router.push('/tutorials')
+  } else {
+    // User is not logged in, redirect to register
+    router.push('/register')
+  }
+}
+
   return (
     <div className="bg-gradient-to-br from-blue-50 to-green-50">
       {/* Hero Section */}
@@ -33,12 +68,13 @@ export default function Home() {
           Learn to connect with family and friends through Facebook, WhatsApp, and more with our friendly, step-by-step guidance.
         </p>
         <div className="space-x-4">
-          <a 
-            href="/register" 
-            className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition text-lg font-semibold shadow-lg"
+          <button
+            onClick={handleStartLearning}
+            disabled={isLoading}
+            className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition text-lg font-semibold shadow-lg disabled:opacity-50"
           >
-            Start Learning Free
-          </a>
+            {isLoading ? 'Loading...' : 'Start Learning Free'}
+          </button>
           <a 
             href="/login" 
             className="bg-green-600 text-white px-8 py-4 rounded-lg hover:bg-green-700 transition text-lg font-semibold shadow-lg"
